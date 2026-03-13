@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRESUPUESTO - Móvil</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet">
+
+<style>
+
+@keyframes fadeInScale{
+from{opacity:0;transform:scale(0.95);}
+to{opacity:1;transform:scale(1);}
+}
+
+.animate-in{
+animation:fadeInScale 0.7s ease-out forwards;
+}
+
+body{
+background-color:#0d1117;
+background-image:
+radial-gradient(circle at center, rgba(59,130,246,0.05) 0%, transparent 70%),
+repeating-linear-gradient(0deg, rgba(59,130,246,0.05) 0px, transparent 1px, transparent 20px),
+repeating-linear-gradient(90deg, rgba(59,130,246,0.05) 0px, transparent 1px, transparent 20px);
+background-size:100% 20px,20px 100%;
+background-position:0 0;
+background-attachment:fixed;
+position:relative;
+padding-bottom:4rem;
+}
+
+.futuristic-glow{
+font-family:'Orbitron',sans-serif;
+text-shadow:
+0 0 5px rgba(59,130,246,0.6),
+0 0 10px rgba(59,130,246,0.4),
+0 0 15px rgba(59,130,246,0.2);
+color:#90CAF9;
+}
+
+.cool-title-font{
+font-family:'Michroma',sans-serif;
+}
+
+input{
+text-transform:uppercase;
+}
+
+.delete-btn{
+color:#6b7280;
+font-size:18px;
+padding:4px;
+cursor:pointer;
+transition:0.2s;
+}
+
+.delete-btn:hover{
+color:#ef4444;
+}
+
+</style>
+</head>
+
+<body class="min-h-screen font-sans flex flex-col items-center text-blue-300">
+
+<div id="app-container" class="mt-8 bg-gray-900 bg-opacity-70 backdrop-filter backdrop-blur-lg p-6 rounded-xl border border-blue-700/50 shadow-2xl shadow-blue-500/30 w-full max-w-md">
+
+<h1 class="text-3xl font-extrabold text-center text-blue-400 mb-2 tracking-widest uppercase cool-title-font">
+PRESUPUESTO
+</h1>
+
+<p class="text-center text-blue-300 text-sm mb-8 opacity-80 futuristic-glow">
+Brandon Stiven Sánchez Rodríguez
+</p>
+
+<div>
+
+<div class="mb-6">
+<label class="block text-blue-200 text-lg font-semibold mb-2">
+Presupuesto:
+</label>
+
+<input
+type="text"
+id="salary"
+class="w-full p-3 bg-gray-700 border border-blue-600 rounded-lg text-blue-100"
+placeholder="Ej: 800.000"
+/>
+</div>
+
+<div class="mb-6">
+<h2 class="text-xl font-semibold text-blue-200 mb-4">Gastos:</h2>
+
+<div id="expenses-list"></div>
+
+<button
+id="add-expense-btn"
+class="w-full bg-blue-700 text-white p-3 rounded-lg hover:bg-blue-600 transition">
+
+Añadir Gasto
+</button>
+
+</div>
+
+<div class="bg-blue-900/30 border border-blue-700/50 p-4 rounded-lg">
+
+<div class="flex justify-between mb-2">
+<span>Total de Gastos:</span>
+<span id="total-expenses">COP $0</span>
+</div>
+
+<div class="flex justify-between">
+<span>Presupuesto Restante:</span>
+<span id="remaining-salary">COP $0</span>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+const salaryInput=document.getElementById('salary');
+const expensesList=document.getElementById('expenses-list');
+const addBtn=document.getElementById('add-expense-btn');
+
+const totalExpensesSpan=document.getElementById('total-expenses');
+const remainingSalarySpan=document.getElementById('remaining-salary');
+
+let salary='';
+let expenses=[];
+let nextId=1;
+
+
+/* GUARDAR DATOS */
+
+function saveData(){
+localStorage.setItem('salary', salary);
+localStorage.setItem('expenses', JSON.stringify(expenses));
+localStorage.setItem('nextId', nextId);
+}
+
+/* CARGAR DATOS */
+
+function loadData(){
+
+const savedSalary = localStorage.getItem('salary');
+const savedExpenses = localStorage.getItem('expenses');
+const savedNextId = localStorage.getItem('nextId');
+
+if(savedSalary){
+salary = savedSalary;
+salaryInput.value = salary;
+}
+
+if(savedExpenses){
+expenses = JSON.parse(savedExpenses);
+}
+
+if(savedNextId){
+nextId = parseInt(savedNextId);
+}
+
+}
+
+
+function formatCurrency(value){
+return new Intl.NumberFormat('es-CO',{
+style:'currency',
+currency:'COP',
+minimumFractionDigits:0
+}).format(value);
+}
+
+function formatNumber(num){
+return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
+}
+
+function parseNumber(num){
+if(!num)return 0;
+return parseFloat(num.replace(/\./g,''));
+}
+
+function renderExpenses(){
+
+expensesList.innerHTML='';
+
+expenses.forEach(exp=>{
+
+const div=document.createElement('div');
+
+div.className='flex items-center space-x-2 mb-2';
+
+div.innerHTML=`
+
+<input
+type="text"
+placeholder="Nombre del gasto"
+class="w-1/2 p-2 bg-gray-700 border border-blue-600 rounded expense-name"
+data-id="${exp.id}"
+value="${exp.name}"
+>
+
+<input
+type="text"
+placeholder="Monto"
+class="w-1/3 p-2 bg-gray-700 border border-blue-600 rounded text-right expense-amount"
+data-id="${exp.id}"
+value="${exp.amount}"
+>
+
+<button class="delete-btn" data-id="${exp.id}">✕</button>
+
+`;
+
+expensesList.appendChild(div);
+
+});
+
+}
+
+function updateSummary(){
+
+let total=0;
+
+expenses.forEach(e=>{
+total+=parseNumber(e.amount);
+});
+
+const remaining=parseNumber(salary)-total;
+
+totalExpensesSpan.textContent=formatCurrency(total);
+remainingSalarySpan.textContent=formatCurrency(remaining);
+
+}
+
+
+/* SALARIO */
+
+salaryInput.addEventListener('input',e=>{
+
+let raw=e.target.value.replace(/\D/g,'');
+
+salary=formatNumber(raw);
+
+e.target.value=salary;
+
+updateSummary();
+saveData();
+
+});
+
+
+/* AÑADIR GASTO */
+
+addBtn.addEventListener('click',()=>{
+
+expenses.push({id:nextId,name:'',amount:''});
+nextId++;
+
+renderExpenses();
+saveData();
+
+});
+
+
+/* BORRAR GASTO */
+
+expensesList.addEventListener('click',e=>{
+
+if(e.target.classList.contains('delete-btn')){
+
+const id=parseInt(e.target.dataset.id);
+
+expenses=expenses.filter(x=>x.id!==id);
+
+renderExpenses();
+updateSummary();
+saveData();
+
+}
+
+});
+
+
+/* EDITAR GASTO */
+
+expensesList.addEventListener('input',e=>{
+
+const id=parseInt(e.target.dataset.id);
+const index=expenses.findIndex(x=>x.id===id);
+
+if(e.target.classList.contains('expense-name')){
+expenses[index].name=e.target.value;
+}
+
+if(e.target.classList.contains('expense-amount')){
+
+let raw=e.target.value.replace(/\D/g,'');
+
+let formatted=formatNumber(raw);
+
+e.target.value=formatted;
+
+expenses[index].amount=formatted;
+
+updateSummary();
+}
+
+saveData();
+
+});
+
+
+/* MULTIPLICAR POR MESES */
+
+expensesList.addEventListener('keydown',e=>{
+
+if(e.key==="Enter" && e.target.classList.contains('expense-amount')){
+
+const id=parseInt(e.target.dataset.id);
+const index=expenses.findIndex(x=>x.id===id);
+
+const name=expenses[index].name;
+
+const match=name.match(/POR\s*(\d+)/i);
+
+if(match){
+
+const meses=parseInt(match[1]);
+const monto=parseNumber(expenses[index].amount);
+
+const total=monto*meses;
+
+const formatted=formatNumber(total);
+
+expenses[index].amount=formatted;
+e.target.value=formatted;
+
+updateSummary();
+saveData();
+
+}
+
+}
+
+});
+
+
+/* INICIAR APP */
+
+loadData();
+renderExpenses();
+updateSummary();
+
+</script>
+
+</body>
+</html>
